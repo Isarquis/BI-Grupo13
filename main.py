@@ -1,12 +1,22 @@
 from DataModel import PredictionInput, PredictionResponse, RetrainInput, RetrainResponse
 from PredictionModel import predecir
 from RetrainModel import reentrenar_modelo
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Body
 import pandas as pd
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form
+from fastapi.responses import JSONResponse
+from io import StringIO
+from typing import List, Optional
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
+from pydantic import BaseModel
+from typing import List, Optional
+import pandas as pd
+import json
+# Importar la función de predicción desde PredictionModel.py
+from PredictionModel import predecir  
 
 app = FastAPI()
-
 @app.get("/")
 def home():
     return {"message": "API de Fake News Detector Activa"}
