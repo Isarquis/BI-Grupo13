@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predecir Noticias - Fake News Detector</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+    <!-- Custom Google font-->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@100;200;300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet" />
+    <!-- Bootstrap icons-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet" />
+    <!-- Core theme CSS (includes Bootstrap)-->
+    <link href="css/styles.css" rel="stylesheet" />
+</head>
+<body>
+    
+    <nav class="navbar navbar-expand-lg navbar-light bg-white py-3">
+        <div class="container px-5">
+            <a class="navbar-brand" href="index.html"><span class="fw-bolder text-primary">Fake News Detector</span></a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 small fw-bolder">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="predict.html">Predecir</a></li>
+                    <li class="nav-item"><a class="nav-link" href="projects.html">Reentrenamiento</a></li>
+                    <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-5">
+        <h2 class="text-center">Ingresar Noticias para Predicción</h2>
+        <form id="predict-form" class="mt-4">
+            <div id="news-container">
+                <div class="news-input mb-3">
+                    <input type="text" class="form-control mb-2" placeholder="Título" name="titulo[]">
+                    <textarea class="form-control" placeholder="Descripción" name="descripcion[]"></textarea>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+                <button type="button" id="add-news" class="btn btn-outline-secondary btn-lg px-5 py-3 fs-6 fw-bolder flex-fill mx-2">Agregar Noticia</button>
+                <button type="submit" class="btn btn-primary btn-lg px-5 py-3 fs-6 fw-bolder flex-fill mx-2">Predecir</button>
+                <a href="index.html" class="btn btn-outline-dark btn-lg px-5 py-3 fs-6 fw-bolder flex-fill mx-2">Volver</a>
+            </div>
+        </form>
+        <div id="results" class="mt-4"></div>
+        <canvas id="predictionChart" class="mt-4"></canvas>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const ctx = document.getElementById("predictionChart").getContext("2d");
+        let predictionChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: ["Noticias Falsas", "Noticias Verdaderas"],
+                datasets: [{
+                    label: "Cantidad",
+                    data: [0, 0],
+                    backgroundColor: ["rgba(255, 99, 132, 0.5)", "rgba(75, 192, 192, 0.5)"],
+                    borderColor: ["rgba(255, 99, 132, 1)", "rgba(75, 192, 192, 1)"],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        document.getElementById("add-news").addEventListener("click", function() {
+            const container = document.getElementById("news-container");
+            const newInput = document.createElement("div");
+            newInput.classList.add("news-input", "mb-3");
+            newInput.innerHTML = `
+                <input type="text" class="form-control mb-2" placeholder="Título" name="titulo[]">
+                <textarea class="form-control" placeholder="Descripción" name="descripcion[]"></textarea>
+            `;
+            container.appendChild(newInput);
+        });
+
+        document.getElementById("predict-form").addEventListener("submit", async function(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const titulos = formData.getAll("titulo[]");
+            const descripciones = formData.getAll("descripcion[]");
+            
+            const response = await fetch("http://localhost:8000/predict/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ titulo: titulos, descripcion: descripciones })
+            });
+            const data = await response.json();
+            
+            let resultsHTML = "<h3>Resultados</h3><ul class='list-group'>";
+            let fakeCount = 0, trueCount = 0;
+            data.forEach((res, index) => {
+                resultsHTML += `<li class='list-group-item'><strong>${titulos[index]}</strong>: ${res.prediccion} (${(res.probabilidad[1] * 100).toFixed(2)}%)</li>`;
+                if (res.prediccion === "Falso") fakeCount++;
+                else trueCount++;
+            });
+            resultsHTML += "</ul>";
+            document.getElementById("results").innerHTML = resultsHTML;
+            
+            predictionChart.data.datasets[0].data = [fakeCount, trueCount];
+            predictionChart.update();
+            
+            document.getElementById("news-container").innerHTML = `
+                <div class="news-input mb-3">
+                    <input type="text" class="form-control mb-2" placeholder="Título" name="titulo[]">
+                    <textarea class="form-control" placeholder="Descripción" name="descripcion[]"></textarea>
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html>

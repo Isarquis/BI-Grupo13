@@ -3,6 +3,7 @@ from PredictionModel import predecir
 from RetrainModel import reentrenar_modelo
 from fastapi import FastAPI, UploadFile, File
 import pandas as pd
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
@@ -11,10 +12,18 @@ def home():
     return {"message": "API de Fake News Detector Activa"}
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permite peticiones desde cualquier origen
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite todos los métodos (GET, POST, etc.)
+    allow_headers=["*"],  # Permite todos los headers
+)
 
 @app.post("/predict/")
 def predict(input_data: PredictionInput):
     resultados = predecir(input_data.titulo, input_data.descripcion)
+    print(resultados)
     return resultados
 
 @app.post("/retrain/")
@@ -23,7 +32,13 @@ async def retrain(file: UploadFile = File(...)):  # File ahora está correctamen
     
     # Llamar la función de reentrenamiento
     accuracy, precision, recall, f1 = reentrenar_modelo(df)
-
+    print({
+        "mensaje": "Modelo actualizado con éxito.",
+        "accuracy": accuracy,
+        "precision": precision,
+        "recall": recall,
+        "f1_score": f1
+    })
     return {
         "mensaje": "Modelo actualizado con éxito.",
         "accuracy": accuracy,
