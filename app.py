@@ -33,5 +33,31 @@ def index():
 
     return render_template("index.html", resultado=resultado, historial=session["historial"])
 
+@app.route("/estadisticas", methods=["GET", "POST"])
+def estadisticas():
+    mensaje = None
+
+    if request.method == "POST":
+        # Verificar si el usuario subió un archivo
+        if "file" not in request.files:
+            mensaje = "No se seleccionó ningún archivo."
+        else:
+            file = request.files["file"]
+
+            if file.filename == "":
+                mensaje = "No se seleccionó ningún archivo."
+            else:
+                # Enviar el archivo a la API de FastAPI
+                api_url = "http://127.0.0.1:8000/reentrenar/"
+                files = {"file": (file.filename, file.stream, "multipart/form-data")}
+                response = requests.post(api_url, files=files)
+
+                if response.status_code == 200:
+                    mensaje = "Modelo reentrenado exitosamente."
+                else:
+                    mensaje = "Hubo un error al reentrenar el modelo."
+
+    return render_template("estadisticas.html", mensaje=mensaje)
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
