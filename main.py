@@ -33,7 +33,6 @@ app.add_middleware(
 @app.post("/predict/")
 def predict(input_data: PredictionInput):
     resultados = predecir(input_data.titulo, input_data.descripcion)
-    print(resultados)
     return resultados
 
 @app.post("/retrain/")
