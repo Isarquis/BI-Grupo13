@@ -19,14 +19,19 @@
             <button onclick="location.href='index.html'" class="btn btn-outline-secondary btn-lg">Volver</button>
         </div>
 
-        <div id="retrain-result" class="mt-4"></div>
+        <div class="progress mt-4" style="height: 25px; display: none;">
+            <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%;">0%</div>
+        </div>
+
+        <div id="retrain-result" class="mt-4 text-dark"></div>
     </div>
 
     <script>
         document.getElementById("retrain-btn").addEventListener("click", async function() {
             const fileInput = document.getElementById("file");
+            const progressBar = document.getElementById("progress-bar");
+            const progressContainer = document.querySelector(".progress");
 
-            // Validar que el usuario haya seleccionado un archivo
             if (!fileInput.files.length) {
                 alert("Por favor, selecciona un archivo.");
                 return;
@@ -35,30 +40,48 @@
             const formData = new FormData();
             formData.append("file", fileInput.files[0]);
 
+            progressContainer.style.display = "block";
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 2;
+                if (progress >= 95) progress = 95; 
+                progressBar.style.width = progress + "%";
+                progressBar.innerText = progress + "%";
+            }, 1000);
+
             try {
                 const response = await fetch("http://localhost:8000/retrain/", {
                     method: "POST",
                     body: formData
                 });
 
+                clearInterval(interval);
+                progressBar.style.width = "100%";
+                progressBar.innerText = "100%";
+
                 const result = await response.json();
-                console.log("Respuesta del servidor:", result); // PARA DEPURACIÓN
+                
+                console.log("Respuesta del servidor:", result);
+                
 
-                if (!result || typeof result !== "object") {
-                    throw new Error("Respuesta inesperada del servidor.");
-                }
-
-                document.getElementById("retrain-result").innerHTML = `
-                    <h3 class="mt-4 text-success">Modelo actualizado con éxito</h3>
-                    <p><strong>Accuracy:</strong> ${result.accuracy}</p>
-                    <p><strong>Precision:</strong> ${result.precision}</p>
-                    <p><strong>Recall:</strong> ${result.recall}</p>
-                    <p><strong>F1 Score:</strong> ${result.f1_score}</p>
-                `;
+                if (result.mensaje) {
+                    document.getElementById("retrain-result").innerHTML = `
+            <h3 class="mt-4 text-success">${result.mensaje}</h3>
+            <p><strong>Accuracy:</strong> ${result.accuracy ?? "N/A"}</p>
+            <p><strong>Precision:</strong> ${result.precision ?? "N/A"}</p>
+            <p><strong>Recall:</strong> ${result.recall ?? "N/A"}</p>
+            <p><strong>F1 Score:</strong> ${result.f1_score ?? "N/A"}</p>
+        `;
+    } else {
+        document.getElementById("retrain-result").innerHTML = `<p class="text-warning">No se recibieron datos válidos del servidor.</p>`;
+    }
 
             } catch (error) {
                 console.error("Error:", error);
                 document.getElementById("retrain-result").innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
+            } finally {
+                clearInterval(interval);
+                setTimeout(() => { progressContainer.style.display = "none"; }, 500);
             }
         });
     </script>
