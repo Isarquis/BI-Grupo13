@@ -23,7 +23,6 @@ app.add_middleware(
 @app.post("/predict/")
 def predict(input_data: PredictionInput):
     resultados = predecir(input_data.titulo, input_data.descripcion)
-    print(resultados)
     return resultados
 
 @app.post("/retrain/")
@@ -32,17 +31,12 @@ async def retrain(file: UploadFile = File(...)):  # File ahora está correctamen
     
     # Llamar la función de reentrenamiento
     accuracy, precision, recall, f1 = reentrenar_modelo(df)
-    print({
-        "mensaje": "Modelo actualizado con éxito.",
-        "accuracy": accuracy,
-        "precision": precision,
-        "recall": recall,
-        "f1_score": f1
-    })
-    return {
+    resultados={
         "mensaje": "Modelo actualizado con éxito.",
         "accuracy": accuracy,
         "precision": precision,
         "recall": recall,
         "f1_score": f1
     }
+    print(resultados)
+    return resultados
