@@ -73,7 +73,7 @@ def reentrenar_modelo(nuevo_df):
     ])
     
     pipeline.fit(X_train, y_train)
-    joblib.dump(pipeline, "modelo_fake_news_reentrenado.joblib")
+    joblib.dump(pipeline, "modelo_fake_news.joblib")
     
     y_pred = pipeline.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)

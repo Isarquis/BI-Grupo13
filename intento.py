@@ -17,6 +17,8 @@ from imblearn.over_sampling import SMOTE
 import matplotlib.pyplot as plt
 import joblib
 from sklearn.pipeline import FunctionTransformer
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
+
 
 # Descarga de recursos necesarios de NLTK
 nltk.download('punkt')
@@ -48,7 +50,10 @@ def preprocess_series(X):
     else:
         return preprocessing(str(X))  # Convertir a string y aplicar directamente
 
+data = data.dropna(subset=['Titulo', 'Descripcion', 'Label'])
 
+# Eliminar duplicados basados en Titulo y Descripcion
+data = data.drop_duplicates(subset=['Titulo', 'Descripcion'])
 # Aplicar limpieza a título y descripción
 data["Titulo"] = data["Titulo"].apply(preprocessing)
 data["Descripcion"] = data["Descripcion"].apply(preprocessing)
@@ -73,3 +78,17 @@ pipeline.fit(X_train, y_train)
 
 # Guardar el modelo
 joblib.dump(pipeline, "modelo_fake_news.joblib")
+
+y_pred = pipeline.predict(X_test)
+
+# Calcular métricas
+accuracy = accuracy_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred, average='weighted')  # Usa 'weighted' para multiclase
+recall = recall_score(y_test, y_pred, average='weighted')
+f1 = f1_score(y_test, y_pred, average='weighted')
+
+# Mostrar resultados
+print(f"🔹 Accuracy: {accuracy:.4f}")
+print(f"🔹 Precision: {precision:.4f}")
+print(f"🔹 Recall: {recall:.4f}")
+print(f"🔹 F1-Score: {f1:.4f}")
